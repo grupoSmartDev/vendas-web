@@ -2,13 +2,11 @@
 import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const TENANT_KEY = process.env.NEXT_PUBLIC_TENANT_KEY || '12345678900';
 
 export const api = axios.create({
     baseURL: API_URL,
     headers: {
         'Content-Type': 'application/json',
-        'x-tenant-key': TENANT_KEY,
     },
 });
 
@@ -16,20 +14,24 @@ export const api = axios.create({
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('accessToken');
+        const tenantKey = localStorage.getItem('tenantKey');
 
         console.log('📤 API Request:', {
             url: config.url,
             fullUrl: `${config.baseURL}${config.url}`,
             method: config.method?.toUpperCase(),
             hasToken: !!token,
+            hasTenantKey: !!tenantKey,
         });
 
+        // Adiciona token se existir
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
 
-        if (!config.headers['x-tenant-key']) {
-            config.headers['x-tenant-key'] = TENANT_KEY;
+        // 🆕 Adiciona tenantKey no header (opcional, mas útil para logs)
+        if (tenantKey && !config.headers['x-tenant-key']) {
+            config.headers['x-tenant-key'] = tenantKey;
         }
 
         return config;
@@ -50,18 +52,13 @@ api.interceptors.response.use(
         return response;
     },
     (error) => {
-        // ⚠️ LOG COMPLETO DO ERRO
         console.error('❌ API Error COMPLETO:', error);
         console.error('❌ API Error Details:', {
             message: error.message,
             code: error.code,
-            config: error.config,
-            request: error.request,
             response: error.response,
-            stack: error.stack,
         });
 
-        // Se tem response (erro HTTP)
         if (error.response) {
             console.error('❌ HTTP Error:', {
                 url: error.config?.url,
@@ -75,21 +72,18 @@ api.interceptors.response.use(
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('refreshToken');
                 localStorage.removeItem('user');
+                localStorage.removeItem('tenantKey'); // 🆕
 
                 if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
                     window.location.href = '/login';
                 }
             }
-        }
-        // Se não tem response (erro de rede)
-        else if (error.request) {
-            console.error('❌ Network Error - Requisição foi feita mas sem resposta:', {
+        } else if (error.request) {
+            console.error('❌ Network Error:', {
                 url: error.config?.url,
-                message: 'Backend não está respondendo ou CORS bloqueando',
+                message: 'Backend não está respondendo',
             });
-        }
-        // Erro antes da requisição
-        else {
+        } else {
             console.error('❌ Setup Error:', error.message);
         }
 

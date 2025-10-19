@@ -10,7 +10,7 @@ import type {
     SetMetaData,
 } from '@/types/index';
 
-const TENANT_KEY = process.env.NEXT_PUBLIC_TENANT_KEY || '12345678900';
+const TENANT_KEY = process.env.NEXT_PUBLIC_TENANT_KEY || '43610517808';
 
 /**
  * Serviço de vendas

@@ -4,3 +4,4 @@ export { ViewLeadDialog } from './view-lead-dialog';
 export { KanbanBoard } from './KanbanBoard';
 export { KanbanColumn } from './KanbanColumn';
 export { LeadKanbanCard } from './LeadKanbanCard';
+export { InteractionFeedbackDialog } from './interaction-feedback-dialog';

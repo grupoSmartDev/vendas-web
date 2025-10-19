@@ -26,8 +26,9 @@ import {
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import type { Lead, LeadStatus, LeadSource, CreateLeadData } from '@/types';
+import type { Lead, LeadStatus, LeadSource, CreateLeadData, Empreendimento } from '@/types';
 import { leadsService } from '@/services/lead.service';
+import { empreendimentosService } from '@/services/empreendimentos.service'; // 🆕
 
 /**
  * Schema de validação
@@ -44,6 +45,7 @@ const leadSchema = z.object({
     profissao: z.string().optional(),
     statusId: z.string().optional(),
     sourceId: z.string().optional(),
+    interesseEmpreendimentoId: z.string().optional(), // 🆕
     score: z.string().optional(),
     hasFgts: z.string().optional(),
     tempoFgts: z.string().optional(),
@@ -72,6 +74,8 @@ export function CreateLeadDialog({
     sources,
 }: CreateLeadDialogProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [empreendimentos, setEmpreendimentos] = useState<Empreendimento[]>([]); // 🆕
+    const [loadingEmpreendimentos, setLoadingEmpreendimentos] = useState(false); // 🆕
     const isEditing = !!lead;
 
     const {
@@ -84,6 +88,27 @@ export function CreateLeadDialog({
     } = useForm<LeadFormData>({
         resolver: zodResolver(leadSchema),
     });
+
+    // 🆕 Carregar empreendimentos quando abrir o dialog
+    useEffect(() => {
+        if (open) {
+            loadEmpreendimentos();
+        }
+    }, [open]);
+
+    const loadEmpreendimentos = async () => {
+        try {
+            setLoadingEmpreendimentos(true);
+            const data = await empreendimentosService.getAvailable();
+            setEmpreendimentos(data);
+            console.log('✅ Empreendimentos carregados:', data.length);
+        } catch (error) {
+            console.error('❌ Erro ao carregar empreendimentos:', error);
+            toast.error('Erro ao carregar empreendimentos');
+        } finally {
+            setLoadingEmpreendimentos(false);
+        }
+    };
 
     /**
      * Preenche o form se estiver editando
@@ -98,6 +123,7 @@ export function CreateLeadDialog({
             setValue('profissao', lead.profissao || '');
             setValue('statusId', lead.statusId);
             setValue('sourceId', lead.sourceId || '');
+            setValue('interesseEmpreendimentoId', lead.interesseEmpreendimentoId || ''); // 🆕
             setValue('score', lead.score.toString());
             setValue('hasFgts', lead.hasFgts ? 'true' : 'false');
             setValue('tempoFgts', lead.tempoFgts?.toString() || '');
@@ -126,6 +152,7 @@ export function CreateLeadDialog({
                 profissao: data.profissao || undefined,
                 statusId: data.statusId || undefined,
                 sourceId: data.sourceId || undefined,
+                interesseEmpreendimentoId: data.interesseEmpreendimentoId || undefined, // 🆕
                 score: data.score ? parseInt(data.score) : undefined,
                 hasFgts: data.hasFgts === 'true' ? true : data.hasFgts === 'false' ? false : undefined,
                 tempoFgts: data.tempoFgts ? parseInt(data.tempoFgts) : undefined,
@@ -133,6 +160,8 @@ export function CreateLeadDialog({
                 observacoes: data.observacoes || undefined,
                 proximaAcao: data.proximaAcao || undefined,
             };
+
+            console.log('📤 Enviando lead:', leadData);
 
             if (isEditing) {
                 await leadsService.update(lead.id, leadData);
@@ -323,6 +352,53 @@ export function CreateLeadDialog({
                                     </SelectContent>
                                 </Select>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* 🆕 NOVA SEÇÃO - Interesse */}
+                    <div className="space-y-4">
+                        <h3 className="font-medium">Interesse</h3>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="interesseEmpreendimentoId">
+                                Empreendimento de Interesse
+                            </Label>
+                            <Select
+                                value={watch('interesseEmpreendimentoId') || undefined} // ✅ Undefined ao invés de ""
+                                onValueChange={(value) => setValue('interesseEmpreendimentoId', value)}
+                                disabled={isLoading || loadingEmpreendimentos}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder={
+                                        loadingEmpreendimentos
+                                            ? "Carregando..."
+                                            : "Selecione um empreendimento (opcional)"
+                                    } />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {empreendimentos.map((emp) => (
+                                        <SelectItem key={emp.id} value={emp.id}>
+                                            {emp.name} {emp.cidade && `- ${emp.cidade}`}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {empreendimentos.length === 0 && !loadingEmpreendimentos && (
+                                <p className="text-xs text-muted-foreground">
+                                    Nenhum empreendimento cadastrado
+                                </p>
+                            )}
+                            {watch('interesseEmpreendimentoId') && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setValue('interesseEmpreendimentoId', '')}
+                                    className="text-xs h-7"
+                                >
+                                    Limpar seleção
+                                </Button>
+                            )}
                         </div>
                     </div>
 

@@ -1,13 +1,12 @@
 // src/services/empreendimentos.service.ts
 import { api } from '@/lib/api';
+import { authService } from './auth.service'; // 🆕 Importar
 import type {
     Empreendimento,
     CreateEmpreendimentoData,
     EmpreendimentoFilters,
     PaginatedEmpreendimentos,
 } from '@/types';
-
-const TENANT_KEY = process.env.NEXT_PUBLIC_TENANT_KEY || '12345678900';
 
 /**
  * Serviço de empreendimentos
@@ -17,19 +16,56 @@ export const empreendimentosService = {
      * Lista todos os empreendimentos com filtros
      */
     async getAll(filters?: EmpreendimentoFilters): Promise<PaginatedEmpreendimentos> {
+        const tenantKey = authService.getTenantKey(); // 🆕 Pegar dinamicamente
+
+        if (!tenantKey) {
+            throw new Error('TenantKey não encontrado');
+        }
+
         const { data } = await api.get<PaginatedEmpreendimentos>(
-            `/tenants/${TENANT_KEY}/empreendimentos`,
+            `/tenants/${tenantKey}/empreendimentos`,
             { params: filters }
         );
         return data;
     },
 
     /**
+     * 🆕 NOVO - Lista apenas empreendimentos disponíveis (para dropdowns)
+     */
+    async getAvailable(): Promise<Empreendimento[]> {
+        const tenantKey = authService.getTenantKey();
+
+        if (!tenantKey) {
+            throw new Error('TenantKey não encontrado');
+        }
+
+        const { data } = await api.get<PaginatedEmpreendimentos>(
+            `/tenants/${tenantKey}/empreendimentos`,
+            {
+                params: {
+                    disponivel: true,
+                    limit: 100,
+                    sortBy: 'name',
+                    sortOrder: 'asc',
+                }
+            }
+        );
+
+        return data.data; // Retorna só o array de empreendimentos
+    },
+
+    /**
      * Busca um empreendimento por ID
      */
     async getById(id: string): Promise<Empreendimento> {
+        const tenantKey = authService.getTenantKey(); // 🆕
+
+        if (!tenantKey) {
+            throw new Error('TenantKey não encontrado');
+        }
+
         const { data } = await api.get<Empreendimento>(
-            `/tenants/${TENANT_KEY}/empreendimentos/${id}`
+            `/tenants/${tenantKey}/empreendimentos/${id}`
         );
         return data;
     },
@@ -38,8 +74,14 @@ export const empreendimentosService = {
      * Cria um novo empreendimento
      */
     async create(empreendimentoData: CreateEmpreendimentoData): Promise<Empreendimento> {
+        const tenantKey = authService.getTenantKey(); // 🆕
+
+        if (!tenantKey) {
+            throw new Error('TenantKey não encontrado');
+        }
+
         const { data } = await api.post<Empreendimento>(
-            `/tenants/${TENANT_KEY}/empreendimentos`,
+            `/tenants/${tenantKey}/empreendimentos`,
             empreendimentoData
         );
         return data;
@@ -49,8 +91,14 @@ export const empreendimentosService = {
      * Atualiza um empreendimento
      */
     async update(id: string, empreendimentoData: Partial<CreateEmpreendimentoData>): Promise<Empreendimento> {
+        const tenantKey = authService.getTenantKey(); // 🆕
+
+        if (!tenantKey) {
+            throw new Error('TenantKey não encontrado');
+        }
+
         const { data } = await api.patch<Empreendimento>(
-            `/tenants/${TENANT_KEY}/empreendimentos/${id}`,
+            `/tenants/${tenantKey}/empreendimentos/${id}`,
             empreendimentoData
         );
         return data;
@@ -60,15 +108,27 @@ export const empreendimentosService = {
      * Deleta um empreendimento
      */
     async delete(id: string): Promise<void> {
-        await api.delete(`/tenants/${TENANT_KEY}/empreendimentos/${id}`);
+        const tenantKey = authService.getTenantKey(); // 🆕
+
+        if (!tenantKey) {
+            throw new Error('TenantKey não encontrado');
+        }
+
+        await api.delete(`/tenants/${tenantKey}/empreendimentos/${id}`);
     },
 
     /**
      * Busca estatísticas
      */
     async getStats(): Promise<any> {
+        const tenantKey = authService.getTenantKey(); // 🆕
+
+        if (!tenantKey) {
+            throw new Error('TenantKey não encontrado');
+        }
+
         const { data } = await api.get(
-            `/tenants/${TENANT_KEY}/empreendimentos/stats`
+            `/tenants/${tenantKey}/empreendimentos/stats`
         );
         return data;
     },
@@ -77,8 +137,14 @@ export const empreendimentosService = {
      * MATCH INTELIGENTE - Busca leads compatíveis
      */
     async getCompatibleLeads(id: string): Promise<any> {
+        const tenantKey = authService.getTenantKey(); // 🆕
+
+        if (!tenantKey) {
+            throw new Error('TenantKey não encontrado');
+        }
+
         const { data } = await api.get(
-            `/tenants/${TENANT_KEY}/empreendimentos/${id}/compatible-leads`
+            `/tenants/${tenantKey}/empreendimentos/${id}/compatible-leads`
         );
         return data;
     },

@@ -9,26 +9,23 @@ import type {
     User
 } from '@/types';
 
-const TENANT_KEY = process.env.NEXT_PUBLIC_TENANT_KEY || '43610517808';
-
 export const authService = {
     /**
-     * Faz login no sistema
+     * 🆕 LOGIN SIMPLIFICADO - Apenas email e senha
      */
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
         console.log('🔐 auth.service - Fazendo login...');
         console.log('📧 Email:', credentials.email);
 
         try {
+            // 🆕 MUDOU: Nova rota sem tenant key
             const { data } = await api.post<AuthResponse>(
-                `/tenants/${TENANT_KEY}/auth/login`,
+                `/auth/login`,  // ✅ Removido /tenants/${TENANT_KEY}
                 credentials
             );
 
             console.log('✅ Resposta do backend recebida!');
             console.log('📦 Data completo:', data);
-            console.log('🔑 Tokens?', !!data.tokens);
-            console.log('👤 User?', !!data.user);
 
             if (!data.tokens || !data.tokens.accessToken) {
                 console.error('❌ PROBLEMA: Backend não retornou tokens!');
@@ -36,21 +33,19 @@ export const authService = {
             }
 
             console.log('💾 Salvando tokens no localStorage...');
-            console.log('  accessToken:', data.tokens.accessToken.substring(0, 30) + '...');
 
-            // Salva tokens no localStorage
+            // Salva tokens
             localStorage.setItem('accessToken', data.tokens.accessToken);
             localStorage.setItem('refreshToken', data.tokens.refreshToken);
             localStorage.setItem('user', JSON.stringify(data.user));
 
-            // Verificar se salvou
-            console.log('🔍 Verificando se salvou:');
-            console.log('  accessToken no localStorage:', !!localStorage.getItem('accessToken'));
-            console.log('  refreshToken no localStorage:', !!localStorage.getItem('refreshToken'));
-            console.log('  user no localStorage:', !!localStorage.getItem('user'));
+            // 🆕 NOVO: Salva o tenantKey retornado pelo backend
+            if (data.user.tenant.cnpjCpf) {
+                localStorage.setItem('tenantKey', data.user.tenant.cnpjCpf);
+                console.log('🔑 TenantKey salvo:', data.user.tenant.cnpjCpf);
+            }
 
-            const savedToken = localStorage.getItem('accessToken');
-            console.log('  Token salvo:', savedToken?.substring(0, 30) + '...');
+            console.log('✅ Tudo salvo com sucesso!');
 
             return data;
         } catch (error) {
@@ -61,11 +56,16 @@ export const authService = {
 
     /**
      * Registra usuário em tenant existente
-     * (Usado quando admin adiciona novo corretor)
      */
     async register(userData: RegisterData): Promise<AuthResponse> {
+        const tenantKey = this.getTenantKey(); // ✅ Usar método
+
+        if (!tenantKey) {
+            throw new Error('TenantKey não encontrado. Faça login primeiro.');
+        }
+
         const { data } = await api.post<AuthResponse>(
-            `/tenants/${TENANT_KEY}/auth/register`,
+            `/auth/${tenantKey}/register`,
             userData
         );
 
@@ -78,7 +78,6 @@ export const authService = {
 
     /**
      * Registra NOVA IMOBILIÁRIA (Tenant) - Rota pública!
-     * Essa rota NÃO usa tenant key, pois está criando um novo tenant
      */
     async registerTenant(tenantData: RegisterTenantData): Promise<RegisterTenantResponse> {
         console.log('🏢 auth.service - Registrando nova imobiliária...');
@@ -86,13 +85,12 @@ export const authService = {
 
         try {
             const { data } = await api.post<RegisterTenantResponse>(
-                '/tenants/register',  // ⚠️ SEM tenant key! É rota pública
+                '/tenants/register',
                 tenantData
             );
 
             console.log('✅ Imobiliária criada com sucesso!');
             console.log('🔑 Tenant Key:', data.credentials.tenantKey);
-            console.log('📧 Email Admin:', data.credentials.adminEmail);
 
             return data;
         } catch (error) {
@@ -105,8 +103,14 @@ export const authService = {
      * Busca dados do usuário autenticado
      */
     async getProfile(): Promise<User> {
+        const tenantKey = this.getTenantKey(); // ✅ Usar método
+
+        if (!tenantKey) {
+            throw new Error('TenantKey não encontrado. Faça login primeiro.');
+        }
+
         const { data } = await api.get<User>(
-            `/tenants/${TENANT_KEY}/auth/me`
+            `/tenants/${tenantKey}/auth/me`
         );
 
         return data;
@@ -119,6 +123,7 @@ export const authService = {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
+        localStorage.removeItem('tenantKey'); // 🆕 Remove tenantKey
         window.location.href = '/login';
     },
 
@@ -134,6 +139,13 @@ export const authService = {
      */
     getToken(): string | null {
         return localStorage.getItem('accessToken');
+    },
+
+    /**
+     * 🆕 NOVO MÉTODO - Retorna tenantKey do localStorage
+     */
+    getTenantKey(): string | null {
+        return localStorage.getItem('tenantKey');
     },
 
     /**

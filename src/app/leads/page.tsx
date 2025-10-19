@@ -235,7 +235,7 @@ export default function LeadsPage() {
                         </CardHeader>
                         <CardContent>
 
-                            <div className="text-2xl font-bold">Colocar o total de leads pendentes</div>
+                            <div className="text-2xl font-bold">{stats?.byStatus?.filter((s) => s.statusId === 'pending').length || 0}</div>
                         </CardContent>
                     </Card>
                 </div>

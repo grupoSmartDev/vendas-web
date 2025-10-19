@@ -21,6 +21,9 @@ import {
     Award,
     Activity,
     Zap,
+    Mail,
+    ArrowRight,
+    User,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,17 +61,19 @@ export default function DashboardPage() {
 
             // Carregar dados em paralelo
             const [leads, vendas, leadsRecentes, interacoes, meta] = await Promise.all([
-                leadsService.getStats(),
-                vendasService.getStats(),
-                leadsService.getAll({ page: 1, limit: 5, sortBy: 'createdAt', sortOrder: 'desc' }),
-                leadsService.getAll({ page: 1, limit: 5, sortBy: 'createdAt', sortOrder: 'desc' }),
+                leadsService.getStats().catch(() => ({ total: 0, last30Days: 0 })),
+                vendasService.getStats().catch(() => ({})),
+                leadsService.getAll({ page: 1, limit: 5, sortBy: 'createdAt', sortOrder: 'desc' }).catch(() => ({ data: [] })),
+                // 🆕 Backend retorna ARRAY direto, não { data: [] }
+                interactionsService.getAll({ page: 1, limit: 10, sortBy: 'createdAt', sortOrder: 'desc' }).catch(() => []),
                 vendasService.getMetaProgresso().catch(() => null),
             ]);
 
             setLeadsStats(leads);
             setVendasStats(vendas);
-            setRecentLeads(leadsRecentes.data);
-            setRecentInteractions(interacoes.data);
+            setRecentLeads(leadsRecentes?.data || []);
+            // ✅ interacoes JÁ É o array, não precisa .data
+            setRecentInteractions(Array.isArray(interacoes) ? interacoes : []);
             setMetaProgresso(meta);
         } catch (error) {
             console.error('Erro ao carregar dashboard:', error);
@@ -95,6 +100,41 @@ export default function DashboardPage() {
         if (valor > 0) return <TrendingUp className="h-4 w-4" />;
         if (valor < 0) return <TrendingDown className="h-4 w-4" />;
         return null;
+    };
+
+    // 🆕 Função para pegar ícone do tipo de interação
+    const getInteractionIcon = (typeName: string) => {
+        const icons: Record<string, any> = {
+            call: Phone,
+            ligacao: Phone,
+            whatsapp: MessageSquare,
+            email: Mail,
+            visit: Home,
+            visita: Home,
+            meeting: Users,
+            reuniao: Users,
+            follow_up: Clock,
+            anotacao: FileText,
+        };
+
+        const IconComponent = icons[typeName?.toLowerCase()] || Activity;
+        return IconComponent;
+    };
+
+    // 🆕 Função para cor do tipo
+    const getInteractionColor = (typeName: string) => {
+        const colors: Record<string, string> = {
+            call: 'bg-blue-100 text-blue-600',
+            ligacao: 'bg-blue-100 text-blue-600',
+            whatsapp: 'bg-green-100 text-green-600',
+            email: 'bg-purple-100 text-purple-600',
+            visit: 'bg-orange-100 text-orange-600',
+            visita: 'bg-orange-100 text-orange-600',
+            meeting: 'bg-pink-100 text-pink-600',
+            reuniao: 'bg-pink-100 text-pink-600',
+        };
+
+        return colors[typeName?.toLowerCase()] || 'bg-gray-100 text-gray-600';
     };
 
     // Calcular alertas
@@ -126,7 +166,6 @@ export default function DashboardPage() {
     }
 
     return (
-
         <DashboardLayout>
             <div className="p-6 space-y-6">
                 {/* Header */}
@@ -154,7 +193,7 @@ export default function DashboardPage() {
                                 <Skeleton className="h-8 w-16" />
                             ) : (
                                 <>
-                                    <div className="text-2xl font-bold">{leadsStats?.totalLeads || 0}</div>
+                                    <div className="text-2xl font-bold">{leadsStats?.total || 0}</div>
                                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                                         <span className={getVariacaoColor(12)}>+12%</span>
                                         em relação ao mês passado
@@ -246,7 +285,7 @@ export default function DashboardPage() {
                 <div className="grid gap-6 md:grid-cols-7">
                     {/* Coluna Esquerda - Maior */}
                     <div className="space-y-6 md:col-span-4">
-                        {/* Atividades Recentes */}
+                        {/* 🆕 ATIVIDADES RECENTES MELHORADAS */}
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -269,43 +308,114 @@ export default function DashboardPage() {
                                         ))}
                                     </div>
                                 ) : recentInteractions.length === 0 ? (
-                                    <p className="text-center text-muted-foreground py-8">
-                                        Nenhuma atividade recente
-                                    </p>
+                                    <div className="text-center py-8">
+                                        <Activity className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-2" />
+                                        <p className="text-muted-foreground">Nenhuma atividade recente</p>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                            Comece registrando interações com seus leads
+                                        </p>
+                                    </div>
                                 ) : (
                                     <div className="space-y-4">
-                                        {recentInteractions.map((interaction: any) => (
-                                            <div
-                                                key={interaction.id}
-                                                className="flex items-start gap-4 pb-4 border-b last:border-0 last:pb-0"
-                                            >
-                                                <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                                    <Phone className="h-4 w-4 text-gray-600" />
+                                        {recentInteractions.slice(0, 5).map((interaction: any) => {
+                                            const IconComponent = getInteractionIcon(interaction.type?.name || 'activity');
+                                            const colorClass = getInteractionColor(interaction.type?.name || 'activity');
+
+                                            return (
+                                                <div
+                                                    key={interaction.id}
+                                                    className="flex items-start gap-3 pb-4 border-b last:border-0 last:pb-0 hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors cursor-pointer"
+                                                    onClick={() => router.push(`/leads`)}
+                                                >
+                                                    {/* Ícone do Tipo */}
+                                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${colorClass}`}>
+                                                        <IconComponent className="h-5 w-5" />
+                                                    </div>
+
+                                                    <div className="flex-1 min-w-0">
+                                                        {/* Título Principal */}
+                                                        <div className="flex items-start gap-2 mb-1 flex-wrap">
+                                                            <p className="text-sm font-semibold">
+                                                                {interaction.type?.displayName || 'Interação'}
+                                                            </p>
+                                                            {interaction.lead && (
+                                                                <span className="text-sm text-muted-foreground">
+                                                                    com <span className="font-medium text-foreground">{interaction.lead.name}</span>
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Descrição */}
+                                                        {interaction.description && (
+                                                            <p className="text-sm text-muted-foreground line-clamp-2 mb-1">
+                                                                {interaction.description}
+                                                            </p>
+                                                        )}
+
+                                                        {/* Resultado (se tiver) */}
+                                                        {interaction.result && interaction.isCompleted && (
+                                                            <div className="flex items-start gap-1 mt-1 bg-green-50 border border-green-200 rounded px-2 py-1">
+                                                                <CheckCircle2 className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                                                                <p className="text-xs text-green-800 line-clamp-1">
+                                                                    {interaction.result}
+                                                                </p>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Footer com meta-info */}
+                                                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
+                                                            {/* Tempo */}
+                                                            <span className="flex items-center gap-1">
+                                                                <Clock className="h-3 w-3" />
+                                                                {formatDistanceToNow(new Date(interaction.createdAt), {
+                                                                    locale: ptBR,
+                                                                    addSuffix: true,
+                                                                })}
+                                                            </span>
+
+                                                            {/* Usuário */}
+                                                            {interaction.user && (
+                                                                <span className="flex items-center gap-1">
+                                                                    <User className="h-3 w-3" />
+                                                                    {interaction.user.name}
+                                                                </span>
+                                                            )}
+
+                                                            {/* Status */}
+                                                            {interaction.isCompleted ? (
+                                                                <Badge variant="outline" className="h-5 text-xs bg-green-50 text-green-700 border-green-200">
+                                                                    Concluída
+                                                                </Badge>
+                                                            ) : interaction.scheduledAt ? (
+                                                                <Badge variant="outline" className="h-5 text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                                                                    Agendada
+                                                                </Badge>
+                                                            ) : (
+                                                                <Badge variant="outline" className="h-5 text-xs">
+                                                                    Pendente
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium">
-                                                        {interaction.type?.displayName || 'Interação'} com{' '}
-                                                        {interaction.lead?.name || 'Lead'}
-                                                    </p>
-                                                    <p className="text-sm text-muted-foreground truncate">
-                                                        {interaction.description || 'Sem descrição'}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground mt-1">
-                                                        <Clock className="h-3 w-3 inline mr-1" />
-                                                        {formatDistanceToNow(new Date(interaction.createdAt), {
-                                                            locale: ptBR,
-                                                            addSuffix: true,
-                                                        })}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
+
+                                        {/* Botão Ver Todas */}
+                                        <Button
+                                            variant="ghost"
+                                            className="w-full mt-2"
+                                            onClick={() => router.push('/leads')}
+                                        >
+                                            Ver todas as atividades
+                                            <ArrowRight className="h-4 w-4 ml-2" />
+                                        </Button>
                                     </div>
                                 )}
                             </CardContent>
                         </Card>
 
-                        {/* Leads Recentes / Ações Pendentes */}
+                        {/* Leads Recentes */}
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -405,11 +515,11 @@ export default function DashboardPage() {
                                     <div className="flex items-center justify-between mb-2">
                                         <span className="text-sm font-medium">Leads</span>
                                         <span className="text-sm font-bold">
-                                            {leadsStats?.newLeadsLast7Days || 0}/50
+                                            {leadsStats?.last30Days || 0}/50
                                         </span>
                                     </div>
                                     <Progress
-                                        value={((leadsStats?.newLeadsLast7Days || 0) / 50) * 100}
+                                        value={((leadsStats?.last30Days || 0) / 50) * 100}
                                         className="h-2"
                                     />
                                 </div>
@@ -539,6 +649,7 @@ export default function DashboardPage() {
                                     <li>• Integração completa com API</li>
                                     <li>• Kanban de Leads</li>
                                     <li>• Sistema de Vendas com Metas</li>
+                                    <li>• Sistema de Atividades com Feedback</li>
                                 </ul>
                             </div>
                             <div>
@@ -558,7 +669,6 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
-
         </DashboardLayout>
     );
 }

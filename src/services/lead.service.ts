@@ -10,8 +10,9 @@ import type {
     LeadSource,
     LeadTag,
 } from '@/types';
+import { authService } from './auth.service';
 
-const TENANT_KEY = process.env.NEXT_PUBLIC_TENANT_KEY || '12345678900';
+const TENANT_KEY = process.env.NEXT_PUBLIC_TENANT_KEY || '43610517808';
 
 /**
  * Serviço de leads
@@ -20,11 +21,17 @@ export const leadsService = {
     /**
      * Lista todos os leads com filtros
      */
-    async getAll(filters?: LeadFilters): Promise<PaginatedLeads> {
-        const { data } = await api.get<PaginatedLeads>(
-            `/tenants/${TENANT_KEY}/leads`,
-            { params: filters }
-        );
+    async getAll(filters?: any) {
+        const tenantKey = authService.getTenantKey();
+
+        if (!tenantKey) {
+            throw new Error('TenantKey não encontrado');
+        }
+
+        const { data } = await api.get(`/tenants/${tenantKey}/leads`, {
+            params: filters,
+        });
+
         return data;
     },
 
@@ -41,11 +48,14 @@ export const leadsService = {
     /**
      * Cria um novo lead
      */
-    async create(leadData: CreateLeadData): Promise<Lead> {
-        const { data } = await api.post<Lead>(
-            `/tenants/${TENANT_KEY}/leads`,
-            leadData
-        );
+    async create(leadData: any) {
+        const tenantKey = authService.getTenantKey();
+
+        if (!tenantKey) {
+            throw new Error('TenantKey não encontrado');
+        }
+
+        const { data } = await api.post(`/tenants/${tenantKey}/leads`, leadData);
         return data;
     },
 

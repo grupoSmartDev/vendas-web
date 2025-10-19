@@ -6,8 +6,9 @@ import type {
     CreateInteractionData,
     UpdateInteractionData  // 👈 ADICIONE ISSO
 } from '@/types';
+import { authService } from './auth.service';
 
-const TENANT_KEY = process.env.NEXT_PUBLIC_TENANT_KEY || '12345678900';
+const TENANT_KEY = process.env.NEXT_PUBLIC_TENANT_KEY || '43610517808';
 
 /**
  * Serviço de interações/atividades
@@ -82,6 +83,28 @@ export const interactionsService = {
         const { data } = await api.get<InteractionType[]>(
             `/tenants/${TENANT_KEY}/interactions/config/types`
         );
+        return data;
+    },
+
+    /**
+    * 🆕 Busca TODAS as interações (para dashboard)
+    */
+    async getAll(params?: {
+        page?: number;
+        limit?: number;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+    }) {
+        const tenantKey = authService.getTenantKey();
+
+        if (!tenantKey) {
+            throw new Error('TenantKey não encontrado');
+        }
+
+        const { data } = await api.get(`/tenants/${tenantKey}/interactions`, {
+            params,
+        });
+
         return data;
     },
 };

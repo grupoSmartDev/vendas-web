@@ -18,6 +18,7 @@ export interface User {
         id: string;
         nome: string;
         plan: string;
+        cnpjCpf: string; // 🆕 Adicionar este campo
     };
     permissions: Record<string, string[]>;
 }

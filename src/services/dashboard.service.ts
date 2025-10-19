@@ -1,7 +1,7 @@
 // src/services/dashboard.service.ts
 import { api } from '@/lib/api';
 
-const TENANT_KEY = process.env.NEXT_PUBLIC_TENANT_KEY || '12345678900';
+const TENANT_KEY = process.env.NEXT_PUBLIC_TENANT_KEY || '43610517808';
 
 export interface DashboardStats {
     // Métricas principais

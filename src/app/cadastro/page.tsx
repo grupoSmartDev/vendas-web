@@ -274,7 +274,7 @@ export default function SignUpPage() {
                                 <Label htmlFor="cnpjCpf">CPF/CNPJ *</Label>
                                 <Input
                                     id="cnpjCpf"
-                                    placeholder="12345678900 ou 12345678000199"
+                                    placeholder="43610517808 ou 12345678000199"
                                     value={formData.cnpjCpf}
                                     onChange={(e) => {
                                         const value = e.target.value.replace(/\D/g, '');
@@ -414,7 +414,7 @@ export default function SignUpPage() {
                                 <Label htmlFor="adminCpf">CPF</Label>
                                 <Input
                                     id="adminCpf"
-                                    placeholder="12345678900"
+                                    placeholder="43610517808"
                                     value={formData.adminCpf}
                                     onChange={(e) => {
                                         const value = e.target.value.replace(/\D/g, '').slice(0, 11);
