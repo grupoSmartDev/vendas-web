@@ -74,6 +74,16 @@ const navItems: NavItem[] = [
         icon: BarChart3,
         badge: 'Em breve',
     },
+    {
+        title: 'Atividades',
+        href: '/tasks',
+        icon: BarChart3
+    },
+    {
+        title: 'Templetes',
+        href: '/templetes',
+        icon: BarChart3
+    },
 ];
 
 /**

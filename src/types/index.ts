@@ -747,3 +747,91 @@ export interface ApiError {
     statusCode: number;
     error?: string;
 }
+
+
+// src/types/message-template.ts
+
+export enum MessageTemplateType {
+    PRIMEIRO_CONTATO = 'PRIMEIRO_CONTATO',
+    FOLLOW_UP = 'FOLLOW_UP',
+    AGENDAMENTO = 'AGENDAMENTO',
+    POS_VISITA = 'POS_VISITA',
+    PROPOSTA = 'PROPOSTA',
+    POS_VENDA = 'POS_VENDA',
+}
+
+export interface MessageTemplate {
+    id: string;
+    userId?: string;
+    user?: {
+        id: string;
+        name: string;
+        email: string;
+    };
+    type: MessageTemplateType;
+    subtype?: string | null;
+    name: string;
+    subject?: string | null;
+    content: string;
+    variables: string[];
+    isPublic: boolean;
+    isSystem: boolean;
+    usageCount: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateMessageTemplateData {
+    type: MessageTemplateType;
+    subtype?: string;
+    name: string;
+    subject?: string;
+    content: string;
+    variables?: string[];
+    isPublic?: boolean;
+}
+
+export interface MessageTemplateFilters {
+    type?: MessageTemplateType;
+    subtype?: string;
+    isPublic?: boolean;
+    isSystem?: boolean;
+}
+
+export interface ApplyTemplateVariables {
+    templateId: string;
+    variables: Record<string, string>;
+}
+
+export interface AppliedTemplate {
+    original: {
+        content: string;
+        subject?: string | null;
+    };
+    processed: {
+        content: string;
+        subject?: string | null;
+    };
+    variables: string[];
+    appliedVariables: Record<string, string>;
+}
+
+// Helper para traduzir categorias
+export const MESSAGE_TEMPLATE_LABELS: Record<MessageTemplateType, string> = {
+    [MessageTemplateType.PRIMEIRO_CONTATO]: 'Primeiro Contato',
+    [MessageTemplateType.FOLLOW_UP]: 'Follow-up',
+    [MessageTemplateType.AGENDAMENTO]: 'Agendamento',
+    [MessageTemplateType.POS_VISITA]: 'Pós-Visita',
+    [MessageTemplateType.PROPOSTA]: 'Proposta',
+    [MessageTemplateType.POS_VENDA]: 'Pós-Venda',
+};
+
+// Helper para ícones das categorias
+export const MESSAGE_TEMPLATE_ICONS: Record<MessageTemplateType, string> = {
+    [MessageTemplateType.PRIMEIRO_CONTATO]: '👋',
+    [MessageTemplateType.FOLLOW_UP]: '🔄',
+    [MessageTemplateType.AGENDAMENTO]: '📅',
+    [MessageTemplateType.POS_VISITA]: '🏠',
+    [MessageTemplateType.PROPOSTA]: '💰',
+    [MessageTemplateType.POS_VENDA]: '🎉',
+};
