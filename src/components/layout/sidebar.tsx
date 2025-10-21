@@ -14,6 +14,8 @@ import {
     Settings,
     BarChart3,
     UserCircle,
+    CalendarCheck,
+    NotepadTextDashed,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -45,6 +47,11 @@ const navItems: NavItem[] = [
         badge: 'Em breve',
     },
     {
+        title: 'Tarefas',
+        href: '/tasks',
+        icon: CalendarCheck
+    },
+    {
         title: 'Atividades',
         href: '/activities',
         icon: Calendar,
@@ -74,15 +81,11 @@ const navItems: NavItem[] = [
         icon: BarChart3,
         badge: 'Em breve',
     },
-    {
-        title: 'Atividades',
-        href: '/tasks',
-        icon: BarChart3
-    },
+
     {
         title: 'Templetes',
-        href: '/templetes',
-        icon: BarChart3
+        href: '/templates',
+        icon: NotepadTextDashed
     },
 ];
 

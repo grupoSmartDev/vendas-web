@@ -32,9 +32,10 @@ import {
     MESSAGE_TEMPLATE_LABELS,
     MESSAGE_TEMPLATE_ICONS,
 } from '@/types/index';
-import { ViewTemplateDialog } from '@/components/templetes/view-templete-dialog';
-import { CreateTemplateDialog } from '@/components/templetes/create-templete-dialog';
+
 import { DashboardLayout } from '@/components/layout';
+import { CreateTemplateDialog } from '@/components/templates/create-templete-dialog';
+import { ViewTemplateDialog } from '@/components/templates/view-templete-dialog';
 
 export default function MessageTemplatesPage() {
     const [templates, setTemplates] = useState<MessageTemplate[]>([]);

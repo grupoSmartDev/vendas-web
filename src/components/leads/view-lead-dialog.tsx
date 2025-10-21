@@ -49,6 +49,8 @@ import { toast } from 'sonner';
 import { interactionsService } from '@/services/interactions.service';
 import type { Interaction, InteractionType } from '@/types';
 import { InteractionFeedbackDialog } from './interaction-feedback-dialog';
+import { UseTemplateButton } from '../templates/use-templete-button';
+
 
 interface ViewLeadDialogProps {
     open: boolean;
@@ -76,7 +78,7 @@ export function ViewLeadDialog({
     const [showActivityForm, setShowActivityForm] = useState(false);
     const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed'>('all');
 
-    // 🆕 Estados para o Feedback Dialog
+    // Estados para o Feedback Dialog
     const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
     const [selectedInteraction, setSelectedInteraction] = useState<Interaction | null>(null);
 
@@ -94,7 +96,6 @@ export function ViewLeadDialog({
         }
     }, [open, lead]);
 
-    // Filtrar interações quando mudar o filtro
     useEffect(() => {
         if (filterStatus === 'all') {
             setFilteredInteractions(interactions);
@@ -177,7 +178,6 @@ export function ViewLeadDialog({
         }
     };
 
-    // 🆕 Função para abrir o feedback dialog
     const handleOpenFeedback = (interaction: Interaction) => {
         if (interaction.isCompleted) {
             toast.info('Esta atividade já foi concluída');
@@ -188,7 +188,6 @@ export function ViewLeadDialog({
         setFeedbackDialogOpen(true);
     };
 
-    // 🆕 Função para salvar feedback e criar próxima atividade
     const handleSaveFeedback = async (feedback: {
         result: string;
         isCompleted: boolean;
@@ -201,7 +200,6 @@ export function ViewLeadDialog({
         if (!selectedInteraction || !lead) return;
 
         try {
-            // 1. Atualizar a atividade atual
             await interactionsService.update(selectedInteraction.id, {
                 result: feedback.result,
                 isCompleted: true,
@@ -210,7 +208,6 @@ export function ViewLeadDialog({
 
             toast.success('Atividade concluída com sucesso!');
 
-            // 2. Se tiver próxima atividade, criar
             if (feedback.nextActivity) {
                 await interactionsService.create({
                     leadId: lead.id,
@@ -224,13 +221,12 @@ export function ViewLeadDialog({
                 });
             }
 
-            // 3. Recarregar lista
             await loadInteractions();
 
         } catch (error: any) {
             console.error('Erro ao salvar feedback:', error);
             toast.error('Erro ao salvar feedback');
-            throw error; // Repassa erro pro dialog manter aberto
+            throw error;
         }
     };
 
@@ -416,7 +412,7 @@ export function ViewLeadDialog({
                             </>
                         )}
 
-                        {/* === SEÇÃO DE ATIVIDADES === */}
+                        {/* SEÇÃO DE ATIVIDADES */}
                         <div>
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-3">
@@ -488,7 +484,22 @@ export function ViewLeadDialog({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="description">Descrição *</Label>
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="description">Descrição *</Label>
+                                            {/* 👇 BOTÃO DE TEMPLATES AQUI! */}
+                                            <UseTemplateButton
+                                                lead={lead}
+                                                size="sm"
+                                                variant="ghost"
+                                                onUseTemplate={(content) => {
+                                                    setNewActivity(prev => ({
+                                                        ...prev,
+                                                        description: content
+                                                    }));
+                                                    toast.success('Template aplicado!');
+                                                }}
+                                            />
+                                        </div>
                                         <Textarea
                                             id="description"
                                             placeholder="Descreva o que aconteceu nesta interação..."
@@ -811,7 +822,7 @@ export function ViewLeadDialog({
                 </DialogContent>
             </Dialog>
 
-            {/* 🆕 Dialog de Feedback */}
+            {/* Dialog de Feedback */}
             <InteractionFeedbackDialog
                 open={feedbackDialogOpen}
                 onOpenChange={setFeedbackDialogOpen}
