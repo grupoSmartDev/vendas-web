@@ -1,4 +1,5 @@
 // src/types/index.ts
+export * from './ai';
 
 /**
  * Usuário autenticado

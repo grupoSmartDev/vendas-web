@@ -41,6 +41,7 @@ import {
     Loader2,
     Circle,
     Filter,
+    Brain,
 } from 'lucide-react';
 import type { Lead } from '@/types';
 import { format } from 'date-fns';
@@ -50,6 +51,7 @@ import { interactionsService } from '@/services/interactions.service';
 import type { Interaction, InteractionType } from '@/types';
 import { InteractionFeedbackDialog } from './interaction-feedback-dialog';
 import { UseTemplateButton } from '../templates/use-templete-button';
+import { DiagnosisDialog } from '../diagnosis/diagnosis-dialog';
 
 
 interface ViewLeadDialogProps {
@@ -81,6 +83,8 @@ export function ViewLeadDialog({
     // Estados para o Feedback Dialog
     const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
     const [selectedInteraction, setSelectedInteraction] = useState<Interaction | null>(null);
+
+    const [diagnosisDialogOpen, setDiagnosisDialogOpen] = useState(false);
 
     const [newActivity, setNewActivity] = useState({
         typeId: '',
@@ -289,6 +293,14 @@ export function ViewLeadDialog({
                         <DialogDescription>
                             Detalhes completos do lead e histórico de atividades
                         </DialogDescription>
+                        <Button
+                            variant="outline"
+                            onClick={() => setDiagnosisDialogOpen(true)}
+                            className="border-purple-600 text-purple-600 hover:bg-purple-50"
+                        >
+                            <Brain className="h-4 w-4 mr-2" />
+                            Diagnosticar com IA
+                        </Button>
                     </DialogHeader>
 
                     <div className="space-y-6">
@@ -829,6 +841,13 @@ export function ViewLeadDialog({
                 interaction={selectedInteraction}
                 interactionTypes={interactionTypes}
                 onSave={handleSaveFeedback}
+            />
+
+            <DiagnosisDialog
+                open={diagnosisDialogOpen}
+                onOpenChange={setDiagnosisDialogOpen}
+                leadId={lead.id}
+                leadName={lead.name}
             />
         </>
     );
